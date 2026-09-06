@@ -28,15 +28,13 @@ android {
             val keyAliasValue = System.getenv("CM_KEY_ALIAS") ?: System.getenv("NMI_KEY_ALIAS")
             val keyPasswordValue = System.getenv("CM_KEY_PASSWORD") ?: System.getenv("NMI_KEY_PASSWORD")
 
-            check(!storeFilePath.isNullOrBlank()) { "CM_KEYSTORE_PATH/NMI_KEYSTORE_FILE is missing; release signing cannot continue." }
-            check(!storePasswordValue.isNullOrBlank()) { "CM_KEYSTORE_PASSWORD/NMI_KEYSTORE_PASSWORD is missing; release signing cannot continue." }
-            check(!keyAliasValue.isNullOrBlank()) { "CM_KEY_ALIAS/NMI_KEY_ALIAS is missing; release signing cannot continue." }
-            check(!keyPasswordValue.isNullOrBlank()) { "CM_KEY_PASSWORD/NMI_KEY_PASSWORD is missing; release signing cannot continue." }
 
-            storeFile = file(storeFilePath)
-            storePassword = storePasswordValue
-            keyAlias = keyAliasValue
-            keyPassword = keyPasswordValue
+            if (!storeFilePath.isNullOrBlank() && !storePasswordValue.isNullOrBlank() && !keyAliasValue.isNullOrBlank() && !keyPasswordValue.isNullOrBlank()) {
+                storeFile = file(storeFilePath)
+                storePassword = storePasswordValue
+                keyAlias = keyAliasValue
+                keyPassword = keyPasswordValue
+            }
         }
     }
 
