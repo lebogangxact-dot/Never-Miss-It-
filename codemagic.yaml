@@ -15,6 +15,7 @@ workflows:
 
           KEYSTORE="$CM_BUILD_DIR/nevermissit-release.jks"
           AAB="$CM_BUILD_DIR/app/build/outputs/bundle/release/app-release.aab"
+          GRADLE_LOG="$CM_BUILD_DIR/gradle-build.log"
 
           echo "$NEVERMISSIT_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
           test -s "$KEYSTORE"
@@ -28,7 +29,23 @@ workflows:
           echo "Signing keystore restored and verified."
 
           echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
-          ./gradlew clean bundleRelease --stacktrace --info
+          echo "Java version:" | tee "$GRADLE_LOG"
+          java -version 2>&1 | tee -a "$GRADLE_LOG"
+          echo "Gradle version:" | tee -a "$GRADLE_LOG"
+          ./gradlew --version 2>&1 | tee -a "$GRADLE_LOG"
+          echo "Starting release build..." | tee -a "$GRADLE_LOG"
+
+          set +e
+          ./gradlew clean bundleRelease --stacktrace --info >> "$GRADLE_LOG" 2>&1
+          GRADLE_STATUS=$?
+          set -e
+
+          if [ "$GRADLE_STATUS" -ne 0 ]; then
+            echo "===== GRADLE BUILD FAILED (exit $GRADLE_STATUS) ====="
+            tail -n 250 "$GRADLE_LOG"
+            exit "$GRADLE_STATUS"
+          fi
+
           test -s "$AAB"
           echo "Gradle AAB created: $AAB"
 
@@ -52,3 +69,6 @@ workflows:
           fi
     artifacts:
       - app/build/outputs/bundle/release/app-release.aab
+      - gradle-build.log
+      - gradle-signature-check.txt
+      - final-signature-check.txt
