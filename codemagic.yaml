@@ -72,3 +72,47 @@ workflows:
       - gradle-build.log
       - gradle-signature-check.txt
       - final-signature-check.txt
+
+  nevermissit-diagnostic:
+    name: NeverMissIt Diagnostic
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - NeverMissIt
+      vars:
+        PACKAGE_NAME: com.studioverse.nevermissit
+    scripts:
+      - name: Run diagnostic Gradle build
+        script: |
+          set -u
+
+          LOG="$CM_BUILD_DIR/nevermissit-diagnostic.log"
+          echo "NeverMissIt diagnostic build" | tee "$LOG"
+          echo "Java version:" | tee -a "$LOG"
+          java -version 2>&1 | tee -a "$LOG"
+          echo "Gradle version:" | tee -a "$LOG"
+          ./gradlew --version 2>&1 | tee -a "$LOG"
+          echo "Android SDK: $ANDROID_SDK_ROOT" | tee -a "$LOG"
+          echo "Writing local.properties..." | tee -a "$LOG"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          echo "Running assembleDebug..." | tee -a "$LOG"
+
+          set +e
+          ./gradlew clean assembleDebug --stacktrace --info >> "$LOG" 2>&1
+          STATUS=$?
+          set -e
+
+          echo "===== DIAGNOSTIC RESULT: exit $STATUS =====" | tee -a "$LOG"
+          if [ "$STATUS" -ne 0 ]; then
+            echo "===== LAST 250 LOG LINES ====="
+            tail -n 250 "$LOG"
+          else
+            echo "DEBUG BUILD SUCCEEDED"
+          fi
+
+          # Keep this workflow successful so Codemagic publishes the diagnostic log artifact.
+          exit 0
+    artifacts:
+      - nevermissit-diagnostic.log
+      - app/build/outputs/apk/**/*.apk
