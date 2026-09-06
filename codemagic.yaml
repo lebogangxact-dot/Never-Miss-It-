@@ -27,7 +27,7 @@ workflows:
           keytool -list -keystore "$CM_KEYSTORE_PATH" -storepass "$CM_KEYSTORE_PASSWORD" -alias "$CM_KEY_ALIAS" >/dev/null
           echo "Signing keystore restored and verified."
 
-          gradle clean bundleRelease
+          gradle clean bundleRelease --stacktrace --info
           test -s "$AAB"
           echo "Gradle AAB created: $AAB"
 
